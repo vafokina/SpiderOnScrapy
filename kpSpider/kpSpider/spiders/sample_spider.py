@@ -1,13 +1,20 @@
 import scrapy
 
 from datetime import datetime
-from scrapy.spiders import Spider
+from scrapy.spiders import CrawlSpider, Rule
+from scrapy.linkextractors import LinkExtractor
 
-class NewsSpider(Spider):
+class NewsSpider(CrawlSpider):
     name = 'sample'
     start_urls = ['https://zen.yandex.ru/media/diva/top14-luchshih-jenskih-duhov-camye-populiarnye-duhi-u-jenscin-6154e30548745b42e403546b']
+    allowed_domains = ['zen.yandex.ru/media/diva']
 
-    def parse (self, response):
+    rules = (
+        Rule(LinkExtractor(allow=r".*"), callback='parse_items', follow=True),
+        Rule(LinkExtractor(allow=r".*"), follow=True),
+    )
+
+    def parse_items (self, response):
         url = response.url
         title = response.xpath('/html/head/title/text()').get().strip()
         description = response.xpath("//meta[@name='description']/@content")[0].extract().strip()

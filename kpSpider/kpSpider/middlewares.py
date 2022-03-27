@@ -8,6 +8,9 @@ from scrapy import signals
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 
+from selenium import webdriver
+from scrapy.http import HtmlResponse
+from webdriver_manager.chrome import ChromeDriverManager
 
 class KpspiderSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -101,3 +104,21 @@ class KpspiderDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+
+class SeleniumMiddleware(object):
+
+    def __init__(self):
+        options = webdriver.ChromeOptions()
+        options.add_argument('--ignore-certificate-errors')
+        options.add_argument('--ignore-ssl-errors')
+        self.driver = webdriver.Chrome(ChromeDriverManager().install(), chrome_options=options) # Or whichever browser you want
+        #self.driver = webdriver.Opera()
+
+    # Here you get the request you are making to the urls which your LinkExtractor found and use selenium to get them and return a response.
+    def process_request(self, request, spider):
+        spider.logger.info("Selenium: GET " + request.url)
+        self.driver.get(request.url)
+        self.driver.set_page_load_timeout(6000)
+        body = self.driver.page_source
+
+        return HtmlResponse(self.driver.current_url, body=body, encoding='utf-8', request=request)
